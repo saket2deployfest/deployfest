@@ -78,39 +78,60 @@ congestion_threshold = 15
 CCTV_FEEDS = {
     "feed_1": {
         "name": "Main Entrance",
-        "url": "https://res.cloudinary.com/do5orgcfk/video/upload/v1753219938/main_gate_r2mv6f.mp4",
-        "location": {"lat": 28.6139, "lng": 77.2090},
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779513385/mall_stair_pgmkqu.mp4",
+        "location": {"lat": 12.979452785667108, "lng": 77.719926928982},
         "area": "entrance",
         "max_capacity": 50
     },
     "feed_2": {
         "name": "Mall Stage",
-        "url": "https://res.cloudinary.com/do5orgcfk/video/upload/v1753219924/mall_stair_x2j0y4.mp4",
-        "location": {"lat": 28.6140, "lng": 77.2091},
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779513900/Main_Stage_olgn9z.mp4",
+        "location": {"lat": 12.97947604346141, "lng": 77.71969869509633},
         "area": "stage",
         "max_capacity": 100
     },
     "feed_3": {
         "name": "Red Street Road",
-        "url": "https://res.cloudinary.com/do5orgcfk/video/upload/v1753219928/red_street_movzzb.mp4",
-        "location": {"lat": 28.6141, "lng": 77.2092},
-        "area": "food_court",
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779513373/red_street_wygdnu.mp4",
+        "location": {"lat": 12.979876811228333, "lng": 77.71900686661412},
+        "area": "front_street",
         "max_capacity": 30
     },
     "feed_4": {
         "name": "Exit Gate",
-        "url": "https://res.cloudinary.com/do5orgcfk/video/upload/v1753219934/show_road_eqck6y.mp4",
-        "location": {"lat": 28.6142, "lng": 77.2093},
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779513900/Exit_Gate_rwazcn.mp4",
+        "location": {"lat": 12.979869862552484, "lng": 77.71948285262408},
         "area": "exit_a",
         "max_capacity": 25
     },
     "feed_5": {
         "name": "Subway",
-        "url": "https://res.cloudinary.com/do5orgcfk/video/upload/v1753219926/subway_egn5rh.mp4",
-        "location": {"lat": 28.6143, "lng": 77.2094},
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779513375/subway_pvgegu.mp4",
+        "location": {"lat": 12.979517216997738, "lng": 77.71922792378729},
         "area": "exit_b",
-        "max_capacity": 25
-    }
+        "max_capacity": 30
+    },
+    "feed_6": {
+        "name": "Market",
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779516788/Market_Street_udcxf2.mp4",
+        "location": {"lat": 12.979468576192303, "lng": 77.71913343967294},
+        "area": "back_street",
+        "max_capacity": 60
+    },
+    "feed_7": {
+        "name": "Cross Road",
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779516777/Cross_Road_shgvdg.mp4",
+        "location": {"lat": 12.98013912359981, "lng": 77.71894803688257},
+        "area": "crossroad",
+        "max_capacity": 80
+    },
+    "feed_8": {
+        "name": "Lobby",
+        "url": "https://res.cloudinary.com/djhw7tzod/video/upload/v1779516806/Mall_z9mkga.mp4",
+        "location": {"lat": 12.979699619933339, "lng": 77.71896586407394},
+        "area": "lobby",
+        "max_capacity": 80
+    },
 }
 
 

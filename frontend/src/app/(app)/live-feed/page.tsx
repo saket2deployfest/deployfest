@@ -26,9 +26,11 @@ import { useEffect, useState, useRef, useCallback } from "react";
 
 // Backend configuration
 import { BACKEND_URL } from '@/lib/backend-url';
+import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const BACKEND_BASE = BACKEND_URL;
-const FEED_IDS = ["feed_1", "feed_2", "feed_3", "feed_4", "feed_5"];
+const FEED_IDS = ["feed_1", "feed_2", "feed_3", "feed_4", "feed_5", "feed_6", "feed_7", "feed_8"];
 
 interface FeedData {
   name: string;
@@ -263,6 +265,45 @@ export default function LiveFeedPage() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline'>('offline');
 
+  // Store feeds data in Firestore for caching
+  const storeInFirestore = async (feeds: Record<string, FeedData>) => {
+    try {
+      const promises = Object.entries(feeds).map(async ([feedId, feedData]) => {
+        const docRef = doc(db, 'feed_data', feedId);
+        await setDoc(docRef, { ...feedData, firestoreTimestamp: serverTimestamp() });
+      });
+      await Promise.all(promises);
+    } catch (err) {
+      console.error('Error caching feed data in Firestore:', err);
+    }
+  };
+
+  // Load feeds from Firestore as fallback
+  const loadFromFirestore = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'feed_data'));
+      if (!querySnapshot.empty) {
+        const cachedFeeds: Record<string, FeedData> = {};
+        querySnapshot.docs.forEach(d => {
+          cachedFeeds[d.id] = d.data() as FeedData;
+        });
+        setFeedsData(cachedFeeds);
+        setError('Backend offline – showing cached data from Firestore.');
+        setConnectionStatus('offline');
+        console.info('Loaded feed data from Firestore cache.');
+      } else {
+        setError('Backend offline and no cached data available in Firestore.');
+        setConnectionStatus('offline');
+      }
+    } catch (fsErr) {
+      console.error('Firestore fallback also failed:', fsErr);
+      setError('Backend offline and Firestore cache unavailable.');
+      setConnectionStatus('offline');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Fetch feeds data with improved error handling
   const fetchFeedsData = async () => {
     if (!BACKEND_URL) {
@@ -283,14 +324,17 @@ export default function LiveFeedPage() {
       }
       
       const data = await response.json();
-      setFeedsData(data.feeds || {});
+      const feeds = data.feeds || {};
+      setFeedsData(feeds);
       setError(null);
       setLastUpdate(new Date());
       setConnectionStatus('online');
+      // Persist to Firestore so we have a fallback
+      await storeInFirestore(feeds);
     } catch (err) {
       console.error('Failed to fetch feeds data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch feed data');
-      setConnectionStatus('offline');
+      // Try Firestore cache before giving up
+      await loadFromFirestore();
     } finally {
       setIsLoading(false);
     }

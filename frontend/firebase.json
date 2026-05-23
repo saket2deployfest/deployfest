@@ -2,6 +2,13 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git"]
+    }
+  ],
   "hosting": {
     "public": "out",
     "cleanUrls": true,
@@ -9,6 +16,12 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      }
     ],
     "headers": [
       {
@@ -33,7 +46,7 @@
   },
   "emulators": {
     "firestore": {
-      "port": 8080,
+      "port": 8081,
       "host": "127.0.0.1"
     },
     "ui": {
@@ -43,3 +56,5 @@
     }
   }
 }
+
+

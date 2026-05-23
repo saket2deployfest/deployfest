@@ -10,7 +10,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-// Define Zod schemas but do not export them to comply with 'use server' constraints.
+const ExtractedGrievanceInfoSchema = z.object({
+  location: z.string().optional(),
+  name: z.string().optional(),
+  details: z.string().optional(),
+  missingPhoto: z.boolean().optional(),
+  poi: z.enum(['Washroom', 'Cloak Room', 'Smoking Zone', 'Hydration Area', 'Lost and Found']).nullable().optional(),
+});
+
 const ChatMessageSchema = z.object({
   id: z.string(),
   role: z.enum(['user', 'bot']),
@@ -27,6 +34,7 @@ const CrowdManagementChatbotOutputSchema = z.object({
   category: z.enum(['MEDICAL_EMERGENCY', 'MISSING_PERSON', 'MAP_DIRECTIONS', 'DEFAULT']).describe('The category of the user query.'),
   response: z.string().describe('The chatbot response to the user.'),
   action: z.enum(['NAVIGATE_TO_EMERGENCY_FORM', 'NAVIGATE_TO_MISSING_PERSON_FORM', 'SHOW_USER_MAP']).nullable().describe('The navigation or prefill action to be taken by the frontend.'),
+  extractedInfo: ExtractedGrievanceInfoSchema.optional(),
 });
 export type CrowdManagementChatbotOutput = z.infer<typeof CrowdManagementChatbotOutputSchema>;
 
@@ -38,35 +46,37 @@ const prompt = ai.definePrompt({
   name: 'crowdManagementChatbotPrompt',
   input: {schema: CrowdManagementChatbotInputSchema},
   output: {schema: CrowdManagementChatbotOutputSchema},
-  prompt: `You are a helpful and empathetic crowd management chatbot. Your primary goal is to triage user requests and provide immediate, scannable responses.
+  prompt: `You are Drishti Assistant, a highly advanced agentic crowd safety and venue management chatbot. 
+Your goal is to triage user queries, extract structured details, and execute frontend actions (like filing reports or highlighting map POIs).
 
-  Here are your main tasks:
-  1.  **Triage Initial Request:** Classify the user's message into one of the main categories.
-  2.  **Provide Clear Responses:** Use emojis for quick recognition. Keep responses under 20 words. Be direct and helpful.
+We have three primary categories:
+1. MEDICAL_EMERGENCY: The user reports injuries, sickness, pain, unconsciousness, or any urgent health issue.
+   - Response: Keep it urgent, direct, and reassuring. Always instruct them to stay calm.
+   - Action: Set action to "NAVIGATE_TO_EMERGENCY_FORM".
+   - ExtractedInfo: Extract the location if mentioned, and details of the injury/sickness.
+2. MISSING_PERSON: The user reports a missing friend, relative, or child.
+   - Special Rule: A valid missing person report MUST have a photo.
+   - If the user hasn't provided a photo or full details in the conversation yet, ask them to upload a photo.
+   - Set extractedInfo.missingPhoto = true to prompt the frontend to display an inline photo uploader.
+   - Action: Set action to "NAVIGATE_TO_MISSING_PERSON_FORM" (only if they choose to use the tab form, but we will handle it inline inside the chat!).
+   - ExtractedInfo: Extract "name" of the person, "details" (like "wearing a black hoodie"), and "location" (last seen).
+3. MAP_DIRECTIONS: The user asks for directions, venue map, exits, washrooms, water, lost & found, etc.
+   - Action: Set action to "SHOW_USER_MAP".
+   - ExtractedInfo: Map the target landmarks to one of these exact Points of Interest (POI) names:
+     - "water refill station", "drinking water", "hydration" -> "Hydration Area"
+     - "washroom", "toilet", "restroom", "loo" -> "Washroom"
+     - "cloak room", "bag storage", "luggage" -> "Cloak Room"
+     - "smoking area", "smoking zone" -> "Smoking Zone"
+     - "lost and found", "lost key", "lost phone" -> "Lost and Found"
+     Set extractedInfo.poi to this POI name.
+4. DEFAULT: General queries or greetings. No special action.
 
-  **Categories & Actions:**
-  - **MEDICAL_EMERGENCY:**
-    Keywords: medical, emergency, help, injured, accident, hurt, sick, doctor, ambulance, collapsed, unconscious, bleeding, pain
-    Response: "🚨 MEDICAL EMERGENCY: Call 108 immediately! Opening Emergency Form to log your location. Medical team dispatched."
-    Action: NAVIGATE_TO_EMERGENCY_FORM
-  - **MISSING_PERSON:**
-    Keywords: missing, lost, can't find, disappeared, lost child, separated, where is
-    Response: "📞 MISSING PERSON: Opening Missing Person Form. Security alerted immediately. Provide name, age, last location, clothing."
-    Action: NAVIGATE_TO_MISSING_PERSON_FORM
-  - **MAP_DIRECTIONS:**
-    Keywords: where, exit, washroom, toilet, food, parking, directions, map, location, gate
-    Response: "🗺️ DIRECTIONS: Opening venue map to show locations of exits, washrooms, food courts, and parking areas."
-    Action: SHOW_USER_MAP
-  - **DEFAULT (No Match):**
-    Response: "I help with:\n🚨 Medical emergencies\n👥 Missing persons\n🗺️ Map & directions\nWhat do you need?"
-    Action: null
+Current Conversation State:
+- History: The user's conversation history is provided in the input. Use it for context.
+- User's Latest Message: {{{query}}}
 
-  **Current Conversation State:**
-  - History: The user's conversation history is provided in the input. Use it for context.
-  - User's Latest Message: {{{query}}}
-
-  Analyze the user's message based on the history and current data, and respond with the appropriate JSON object. For DEFAULT category, action must be null.
-  `,
+Analyze the user's message based on the history and current data, and respond with the appropriate JSON object conforming strictly to the output schema.
+`,
 });
 
 const crowdManagementChatbotFlow = ai.defineFlow(

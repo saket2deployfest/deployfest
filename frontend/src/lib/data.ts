@@ -1,7 +1,7 @@
 
 export const keyMetrics = {
-    "Active Guards": { value: '0', change: '+0', changeType: 'neutral' as const }, // This will be updated from Firestore
-    "Active Alerts": { value: '0', change: '+0', changeType: 'neutral' as const },
+    "Active Guards": { value: '0', change: '+0', changeType: 'neutral' as 'neutral' | 'increase' | 'decrease' }, // This will be updated from Firestore
+    "Active Alerts": { value: '0', change: '+0', changeType: 'neutral' as 'neutral' | 'increase' | 'decrease' },
 };
 
 export type Guard = {

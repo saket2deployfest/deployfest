@@ -32,7 +32,7 @@ import MedicalAttentionForm from '@/components/user-dashboard/medical-form';
 import MissingPersonForm from '@/components/user-dashboard/missing-person-form';
 import Chatbot from '@/components/user-dashboard/chatbot';
 import { useRouter } from 'next/navigation';
-import MapViewPage from '@/app/(app)/map-view/page';
+import { MapViewPage } from '@/components/map-view-component';
 import { BACKEND_URL } from '@/lib/backend-url';
 
 export interface Location {
@@ -241,13 +241,19 @@ export default function UserDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("chatbot");
   const [showMapView, setShowMapView] = useState(false);
+  const [mapHighlightPoi, setMapHighlightPoi] = useState<string | null>(null);
 
   const resetAllForms = () => {
     setFormResetCounter(prev => prev + 1);
   };
 
-  const handleNavigation = (action: string, tab?: string) => {
+  const handleNavigation = (action: string, tab?: string, details?: any) => {
     if (action === 'SHOW_USER_MAP') {
+        if (details?.highlightPoi) {
+            setMapHighlightPoi(details.highlightPoi);
+        } else {
+            setMapHighlightPoi(null);
+        }
         setShowMapView(true);
     } else if (action.startsWith('/')) {
         router.push(action);
@@ -326,7 +332,7 @@ export default function UserDashboardPage() {
                   </div>
               </CardHeader>
               <CardContent>
-                  <MapViewPage />
+                  <MapViewPage highlightPoi={mapHighlightPoi} />
               </CardContent>
           </Card>
       )
@@ -377,6 +383,7 @@ export default function UserDashboardPage() {
                     </TabsContent>
                     <TabsContent value="chatbot">
                          <Chatbot 
+                            user={user}
                             handleNavigation={handleNavigation} 
                          />
                     </TabsContent>

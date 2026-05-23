@@ -1,6 +1,8 @@
 
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,11 +63,14 @@ const alertLevelMapping = {
 
 // Map API feed areas to sector names for consistency with your UI
 const areaSectorMapping: Record<string, string> = {
-  "entrance": "Sector A",
-  "stage": "Sector B", 
-  "food_court": "Sector C",
-  "exit_a": "Sector D",
-  "exit_b": "Sector E"
+  "entrance":    "Sector A - Main Entrance",
+  "stage":       "Sector B - Mall Stage",
+  "front_street":"Sector C - Red Street Road",
+  "exit_a":      "Sector D - Exit Gate",
+  "exit_b":      "Sector E - Subway",
+  "back_street": "Sector F - Market",
+  "crossroad":   "Sector G - Cross Road",
+  "lobby":       "Sector H - Lobby",
 };
 
 interface ApiAlert {
@@ -120,6 +125,40 @@ export default function AlertsPage() {
   const intervalRef = useRef<NodeJS.Timeout>();
 
 
+  // Store alerts to Firestore for caching
+  const storeAlertsInFirestore = async (alertsList: CombinedAlert[]) => {
+    try {
+      const promises = alertsList.map(async (alert, index) => {
+        const docRef = doc(db, 'alerts_data', `${alert.feed_id}_${index}`);
+        await setDoc(docRef, { ...alert, firestoreTimestamp: serverTimestamp() });
+      });
+      await Promise.all(promises);
+    } catch (err) {
+      console.error('Error caching alerts in Firestore:', err);
+    }
+  };
+
+  // Load alerts from Firestore as a fallback
+  const loadAlertsFromFirestore = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'alerts_data'));
+      if (!querySnapshot.empty) {
+        const cachedAlerts = querySnapshot.docs.map(d => d.data() as CombinedAlert);
+        setAlerts(cachedAlerts);
+        setLastUpdated(new Date().toISOString());
+        setError('Backend offline – showing cached alerts from Firestore.');
+        console.info('Loaded alerts from Firestore cache.');
+      } else {
+        setError('Backend offline and no cached alert data available.');
+      }
+    } catch (fsErr) {
+      console.error('Firestore alerts fallback failed:', fsErr);
+      setError('Backend offline and Firestore cache unavailable.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchAlertsAndPredictions = async () => {
     try {
       setLoading(true);
@@ -152,13 +191,16 @@ export default function AlertsPage() {
             timestamp: new Date().toISOString()
         }));
 
-      setAlerts([...alertsData.alerts, ...predictedAlerts]);
+      const combined: CombinedAlert[] = [...alertsData.alerts, ...predictedAlerts];
+      setAlerts(combined);
       setLastUpdated(alertsData.timestamp);
+      // Cache to Firestore so fallback is available
+      await storeAlertsInFirestore(combined);
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch alerts';
-      setError(errorMessage);
       console.error('Error fetching alerts:', err);
+      // Fallback to Firestore cache
+      await loadAlertsFromFirestore();
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
