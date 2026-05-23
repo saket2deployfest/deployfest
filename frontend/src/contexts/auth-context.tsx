@@ -46,16 +46,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthProfile | null>(() => getCachedProfile());
+  const [user, setUser] = useState<AuthProfile | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => getCachedToken());
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Optimistically load from session cache on client-side mount
     const cachedProfile = getCachedProfile();
     const cachedTokenValue = getCachedToken();
-    if (cachedProfile) setUser(cachedProfile);
-    if (cachedTokenValue) setToken(cachedTokenValue);
+    if (cachedProfile && cachedTokenValue) {
+      setUser(cachedProfile);
+      setToken(cachedTokenValue);
+      setLoading(false);
+    } else {
+      // If no cache, stop blocking loading instantly so the login page can render
+      setLoading(false);
+    }
 
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
