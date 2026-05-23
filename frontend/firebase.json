@@ -4,6 +4,7 @@
   },
   "hosting": {
     "public": "out",
+    "cleanUrls": true,
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -27,12 +28,6 @@
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
-      }
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ]
   },
